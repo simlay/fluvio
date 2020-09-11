@@ -1,8 +1,6 @@
 use structopt::StructOpt;
-
+use k8_config::context::MinikubeContext;
 use crate::CliError;
-
-pub use context::process_minikube_context;
 
 #[derive(Debug, StructOpt)]
 pub struct SetMinikubeContext {
@@ -11,24 +9,15 @@ pub struct SetMinikubeContext {
     pub name: Option<String>,
 }
 
-mod context {
-
-    use super::*;
-
-    /// Performs following
-    ///     add  IP address to /etc/host
-    ///     create new kubectl cluster and context which uses minikube name
-    pub fn process_minikube_context(ctx: SetMinikubeContext) -> Result<String, CliError> {
-        use k8_config::context::Option;
-        use k8_config::context::create_dns_context;
-
-        let mut option = Option::default();
-        if let Some(name) = ctx.name {
-            option.ctx_name = name;
-        }
-
-        create_dns_context(option);
-
-        Ok("".to_owned())
+/// Performs following
+///     add  IP address to /etc/host
+///     create new kubectl cluster and context which uses minikube name
+pub fn process_minikube_context(ctx: SetMinikubeContext) -> Result<String, CliError> {
+    let mut context = MinikubeContext::try_from_system()?;
+    if let Some(name) = ctx.name {
+        context = context.with_name(name);
     }
+    context.save()?;
+
+    Ok("".to_owned())
 }
