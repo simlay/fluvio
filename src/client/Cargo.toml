@@ -11,8 +11,14 @@ description = "The offical Fluvio driver for Rust"
 name = "fluvio"
 path = "src/lib.rs"
 
+[[test]]
+name = "quick_echo"
+path = "tests/test_quick_echo.rs"
+required-features = ["fluvio_integration"]
+
 [features]
 admin = ["fluvio-sc-schema/use_serde"]
+fluvio_integration = []
 
 [dependencies]
 tracing = "0.1.19"
@@ -42,3 +48,4 @@ dataplane = { version = "0.1.0", path = "../dataplane-protocol", package = "fluv
 
 [dev-dependencies]
 async-std = "1.6.4"
+uuid = { version = "0.8", features = ["v4"] }
