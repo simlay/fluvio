@@ -10,13 +10,6 @@ use fluvio::config::{TlsPolicy, TlsConfig, TlsPaths, ConfigFile, Profile, LOCAL_
 use fluvio::metadata::spg::SpuGroupSpec;
 use flv_util::cmd::CommandExt;
 use fluvio_future::timer::sleep;
-use fluvio::metadata::spu::{SpuSpec, SpuType};
-use fluvio::metadata::spu::IngressPort;
-use fluvio::metadata::spu::Endpoint;
-use fluvio::metadata::spu::IngressAddr;
-use k8_obj_metadata::InputK8Obj;
-use k8_obj_metadata::InputObjectMeta;
-use k8_client::SharedK8Client;
 
 use crate::ClusterError;
 
@@ -222,6 +215,7 @@ impl LocalClusterInstaller {
         sleep(Duration::from_secs(1)).await;
         Ok(())
     }
+
     fn launch_sc(&self) -> Result<(), ClusterError> {
         let outputs = File::create(format!("{}/flv_sc.log", &self.config.log_dir))?;
         let errors = outputs.try_clone()?;
@@ -322,12 +316,10 @@ impl LocalClusterInstaller {
     }
 
     async fn launch_spu_group(&self) -> Result<(), ClusterError> {
-        use k8_client::load_and_share;
-        let client = load_and_share()?;
         let count = self.config.spu_spec.replicas;
         for i in 0..count {
             debug!("launching SPU ({} of {})", i + 1, count);
-            self.launch_spu(i, client.clone(), &self.config.log_dir.to_string())
+            self.launch_spu(i, &self.config.log_dir.to_string())
                 .await?;
         }
         info!("SC log generated at {}/flv_sc.log", &self.config.log_dir);
@@ -338,42 +330,14 @@ impl LocalClusterInstaller {
     async fn launch_spu(
         &self,
         spu_index: u16,
-        client: SharedK8Client,
         log_dir: &str,
     ) -> Result<(), ClusterError> {
-        use k8_client::metadata::MetadataClient;
         const BASE_PORT: u16 = 9010;
         const BASE_SPU: u16 = 5001;
         let spu_id = (BASE_SPU + spu_index) as i32;
+        debug!("Launching SPU id {:?}", spu_id);
         let public_port = BASE_PORT + spu_index * 10;
         let private_port = public_port + 1;
-        let spu_spec = SpuSpec {
-            id: spu_id,
-            spu_type: SpuType::Custom,
-            public_endpoint: IngressPort {
-                port: public_port,
-                ingress: vec![IngressAddr {
-                    hostname: Some("localhost".to_owned()),
-                    ..Default::default()
-                }],
-                ..Default::default()
-            },
-            private_endpoint: Endpoint {
-                port: private_port,
-                host: "localhost".to_owned(),
-                ..Default::default()
-            },
-            ..Default::default()
-        };
-        let input = InputK8Obj::new(
-            spu_spec,
-            InputObjectMeta {
-                name: format!("custom-spu-{}", spu_id),
-                namespace: "default".to_owned(),
-                ..Default::default()
-            },
-        );
-        client.create_item(input).await?;
         // sleep 1 seconds for sc to connect
         sleep(Duration::from_millis(300)).await;
         let log_spu = format!("{}/spu_log_{}.log", log_dir, spu_id);
