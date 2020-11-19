@@ -21,28 +21,19 @@ script = '''
 sudo apt-get update
 sudo apt-get install -y musl-tools build-essential
 rustup target add "$CARGO_MAKE_RELEASE_FLOW_TARGET"
-curl ${CARGO_MAKE_OPENSSL_DOWNLOAD_URL} | tar xzf -
-cd openssl-${CARGO_MAKE_OPENSSL_VERSION}
-CC=musl-gcc ./Configure --prefix="$OPENSSL_DIR" no-dso no-ssl2 no-ssl3 linux-x86_64 -fPIC
-make -j"$(nproc)"
-sudo make install
 '''
-
-[tasks.setup-musl.env]
-CARGO_MAKE_RELEASE_FLOW_TARGET = "x86_64-unknown-linux-musl"
-OPENSSL_DIR = "${HOME}/openssl-musl"
 
 [tasks.setup-musl.condition]
 platforms = ["linux"]
 profiles = [ "production" ]
-env_set = [
-    "CARGO_MAKE_OPENSSL_VERSION",
-    "CARGO_MAKE_OPENSSL_DOWNLOAD_URL",
-]
+
+
+[tasks.setup-musl.env]
+CARGO_MAKE_RELEASE_FLOW_TARGET = "x86_64-unknown-linux-musl"
 
 [tasks.install-github-release.mac]
 script = '''
-github-release --help || {
+github-release --help 2> /dev/null || {
     go get github.com/github-release/github-release;
     ls $(go env GOPATH)/bin;
     cp $(go env GOPATH)/bin/github-release /usr/local/bin;
@@ -71,8 +62,8 @@ args = [
     "upload",
     "--user", "infinyon",
     "--repo", "fluvio",
-    "--tag", "v${CARGO_MAKE_PROJECT_VERSION}",
-    "--name", "fluvio-v${CARGO_MAKE_PROJECT_VERSION}-${TARGET}",
+    "--tag", "v${GIT_TAG}",
+    "--name", "fluvio-v${GIT_TAG}-${TARGET}",
     "--file", "target/${TARGET}/release/fluvio",
 ]
 
@@ -89,8 +80,8 @@ args = [
     "publish",
     "--user", "infinyon",
     "--repo", "fluvio",
-    "--tag", "v${CARGO_MAKE_PROJECT_VERSION}",
-    "--name","v${CARGO_MAKE_PROJECT_VERSION}",
+    "--tag", "v${GIT_TAG}",
+    "--name","v${GIT_TAG}",
 ]
 
 [tasks.release-github-env.linux]
@@ -105,5 +96,5 @@ args = [
     "delete",
     "--user", "infinyon",
     "--repo", "fluvio",
-    "--tag", "v${CARGO_MAKE_PROJECT_VERSION}",
+    "--tag", "v${GIT_TAG}",
 ]

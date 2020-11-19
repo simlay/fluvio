@@ -27,6 +27,21 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.ACTION_RELEASE }}
 
+  release_fluvio_pi:
+    name: Raspberry Pi Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Install cargo-make
+        uses: davidB/rust-cargo-make@v1
+        with:
+          version: '0.32.9'
+      - name: Build and upload pi release to github
+        run: cargo make pi-github-release-upload
+        env:
+          GITHUB_TOKEN: ${{ secrets.ACTION_RELEASE }}
+
   release_docker:
     name: docker release
     runs-on: ubuntu-latest
@@ -37,8 +52,6 @@ jobs:
         uses: davidB/rust-cargo-make@v1
         with:
           version: '0.32.9'
-      - name: Install Musl Tools for Linux
-        run: cargo make setup-musl
       - name: Release docker
         run: |
           export TARGET_CC=musl-gcc
