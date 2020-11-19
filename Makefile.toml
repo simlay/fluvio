@@ -1,2 +1,11 @@
+extend = [
+    { path = "makefiles/Github.toml" },
+    { path = "makefiles/Helm.toml" },
+    { path = "makefiles/Docker.toml" },
+]
+
+[config]
+default_to_workspace = false
+
 [tasks.build]
 args = ["build"]

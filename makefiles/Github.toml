@@ -1,0 +1,109 @@
+extend = "Base.toml"
+[tasks.build-release.mac]
+args = [
+    "build",
+    "--release",
+    "--target=x86_64-apple-darwin",
+    "@@split(CARGO_MAKE_CARGO_BUILD_TEST_FLAGS, )"
+]
+
+[tasks.build-release.linux]
+dependencies = ["setup-musl"]
+args = [
+    "build",
+    "--release",
+    "--target=x86_64-unknown-linux-musl",
+    "@@split(CARGO_MAKE_CARGO_BUILD_TEST_FLAGS, )"
+]
+
+[tasks.setup-musl.linux]
+script = '''
+sudo apt-get update
+sudo apt-get install -y musl-tools build-essential
+rustup target add "$CARGO_MAKE_RELEASE_FLOW_TARGET"
+curl ${CARGO_MAKE_OPENSSL_DOWNLOAD_URL} | tar xzf -
+cd openssl-${CARGO_MAKE_OPENSSL_VERSION}
+CC=musl-gcc ./Configure --prefix="$OPENSSL_DIR" no-dso no-ssl2 no-ssl3 linux-x86_64 -fPIC
+make -j"$(nproc)"
+sudo make install
+'''
+
+[tasks.setup-musl.env]
+CARGO_MAKE_RELEASE_FLOW_TARGET = "x86_64-unknown-linux-musl"
+OPENSSL_DIR = "${HOME}/openssl-musl"
+
+[tasks.setup-musl.condition]
+platforms = ["linux"]
+profiles = [ "production" ]
+env_set = [
+    "CARGO_MAKE_OPENSSL_VERSION",
+    "CARGO_MAKE_OPENSSL_DOWNLOAD_URL",
+]
+
+[tasks.install-github-release.mac]
+script = '''
+github-release --help || {
+    go get github.com/github-release/github-release;
+    ls $(go env GOPATH)/bin;
+    cp $(go env GOPATH)/bin/github-release /usr/local/bin;
+}
+'''
+
+[tasks.install-github-release.linux]
+script = '''
+github-release --help 2> /dev/null || {
+    go get github.com/github-release/github-release;
+    export PATH=$PATH:$(go env GOPATH)/bin/;
+}
+'''
+
+
+[tasks.github-release-upload]
+description = "Upload release binaries to Github"
+category = "Publish"
+dependencies = [
+    "release-github-env",
+    "install-github-release",
+    "build-release",
+]
+command = "github-release"
+args = [
+    "upload",
+    "--user", "infinyon",
+    "--repo", "fluvio",
+    "--tag", "v${CARGO_MAKE_PROJECT_VERSION}",
+    "--name", "fluvio-v${CARGO_MAKE_PROJECT_VERSION}-${TARGET}",
+    "--file", "target/${TARGET}/release/fluvio",
+]
+
+[tasks.github-release-publish]
+description = "Publish release binaries to Github"
+category = "Publish"
+dependencies = [
+    "release-github-env",
+    "install-github-release",
+    "build-release",
+]
+command = "github-release"
+args = [
+    "publish",
+    "--user", "infinyon",
+    "--repo", "fluvio",
+    "--tag", "v${CARGO_MAKE_PROJECT_VERSION}",
+    "--name","v${CARGO_MAKE_PROJECT_VERSION}",
+]
+
+[tasks.release-github-env.linux]
+env = { TARGET = "x86_64-unknown-linux-musl" }
+
+[tasks.release-github-env.mac]
+env = { TARGET = "x86_64-apple-darwin" }
+
+[tasks.delete-github-release]
+command = "github-release"
+args = [
+    "delete",
+    "--user", "infinyon",
+    "--repo", "fluvio",
+    "--tag", "v${CARGO_MAKE_PROJECT_VERSION}",
+]
