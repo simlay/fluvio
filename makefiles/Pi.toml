@@ -31,7 +31,6 @@ category = "Raspberry-Pi"
 dependencies = [
     "pi-github-release-env",
     "install-github-release",
-    "pi-build",
     "display-release-dir",
 ]
 command = "github-release"
@@ -45,11 +44,10 @@ args = [
     "--file", "./target/${TARGET}/release/fluvio",
 ]
 
-[task.display-release-dir]
+[tasks.display-release-dir]
 dependencies = [
-    "pi-build",
 ]
 script = '''
-echo ./target/${TARGET}/release/fluvio"
+echo ./target/${TARGET}/release/fluvio
 ls ./target/${TARGET}/release/
 '''
