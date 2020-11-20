@@ -59,6 +59,7 @@ dependencies = [
 ]
 command = "github-release"
 args = [
+    "-v",
     "upload",
     "--user", "infinyon",
     "--repo", "fluvio",
