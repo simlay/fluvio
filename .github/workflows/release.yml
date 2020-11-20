@@ -23,7 +23,7 @@ jobs:
         with:
           version: '0.32.9'
       - name: Build and upload release to github
-        run: cargo make --profile production github-release-upload
+        run: cargo make -l debug --profile production github-release-upload
         env:
           GITHUB_TOKEN: ${{ secrets.ACTION_RELEASE }}
 
@@ -38,7 +38,7 @@ jobs:
         with:
           version: '0.32.9'
       - name: Build and upload pi release to github
-        run: cargo make pi-github-release-upload
+        run: cargo make -l debug pi-github-release-upload
         env:
           GITHUB_TOKEN: ${{ secrets.ACTION_RELEASE }}
 
@@ -49,11 +49,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Install cargo-make
-        uses: davidB/rust-cargo-make@v1
-        with:
-          version: '0.32.9'
       - name: Release docker
         run: |
           export TARGET_CC=musl-gcc
           docker login --username=${{ secrets.DOCKER_USERNAME }} --password=${{ secrets.DOCKER_PASSWORD }}
           make release_image
+      - name: Release helm chart
+        run: |
+          make helm-install-plugin
+          helm repo add fluvio https://gitops:${{ secrets.HELM_PASSWORD }}@charts.fluvio.io
+          make helm-publish-app
