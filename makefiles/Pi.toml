@@ -32,6 +32,7 @@ dependencies = [
     "pi-github-release-env",
     "install-github-release",
     "pi-build",
+    "display-release-dir",
 ]
 command = "github-release"
 args = [
@@ -41,5 +42,14 @@ args = [
     "--repo", "fluvio",
     "--tag", "v${GIT_TAG}",
     "--name", "fluvio-v${GIT_TAG}-${TARGET}",
-    "--file", "target/${TARGET}/release/fluvio",
+    "--file", "./target/${TARGET}/release/fluvio",
 ]
+
+[task.display-release-dir]
+dependencies = [
+    "pi-build",
+]
+script = '''
+echo ./target/${TARGET}/release/fluvio"
+ls ./target/${TARGET}/release/
+'''

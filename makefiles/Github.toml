@@ -65,7 +65,7 @@ args = [
     "--repo", "fluvio",
     "--tag", "v${GIT_TAG}",
     "--name", "fluvio-v${GIT_TAG}-${TARGET}",
-    "--file", "target/${TARGET}/release/fluvio",
+    "--file", "./target/${TARGET}/release/fluvio",
 ]
 
 [tasks.github-release-publish]
