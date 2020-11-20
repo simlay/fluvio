@@ -48,12 +48,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-      - name: Install cargo-make
       - name: Release docker
         run: |
           export TARGET_CC=musl-gcc
           docker login --username=${{ secrets.DOCKER_USERNAME }} --password=${{ secrets.DOCKER_PASSWORD }}
           make release_image
+
       - name: Release helm chart
         run: |
           make helm-install-plugin
